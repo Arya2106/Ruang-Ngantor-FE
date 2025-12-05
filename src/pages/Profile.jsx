@@ -164,93 +164,62 @@ const Profile = () => {
             <ToastContainer />
             <div className="flex h-screen bg-gray-100">
                 <Sidebar />
-            <div className="flex-1 flex p-8 gap-6 h-full">
-                {/* LEFT: My Tasks */}
-                <div className="w-2/3 bg-white rounded-2xl shadow-lg p-6 border border-gray-200 overflow-y-auto h-full">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">My Tasks</h2>
-                    <div className="space-y-4 h-full flex flex-col">
-                        {myTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    className="relative p-4 rounded-xl border border-gray-200 bg-white shadow hover:shadow-lg transition duration-300 overflow-hidden"
-                                >
-                                    <div
-                                        className={`absolute bottom-0 right-0 w-20 h-20 opacity-40 pointer-events-none rounded-xl
-                                        ${task.task.status === "done" && "bg-gradient-to-br from-green-300 to-green-500"}
-                                        ${task.task.status === "todo" && "bg-gradient-to-br from-yellow-300 to-yellow-500"}
-                                        ${task.task.status === "in progress" && "bg-gradient-to-br from-blue-300 to-blue-500"}`}
-                                        style={{ clipPath: "polygon(100% 0, 0 100%, 100% 100%)" }}
-                                    ></div>
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-1">{task.task.title}</h3>
-                                    <p className="text-sm text-gray-500">Status: {task.task.status}</p>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                        <button
-                                            className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full shadow hover:bg-blue-600 transition"
-                                            onClick={() => handleBtnEditMyTask(task)}
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                        ))}
-                    </div>
-                </div>
 
-                {/* RIGHT: Profile + Statistik */}
-                <div className="w-1/3 flex flex-col gap-6 h-full">
-                    <div className="flex-1 bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
-                        <div className="bg-white w-full p-6 rounded-3xl shadow-lg border border-gray-200 flex flex-row gap-6">
-                            {/* LEFT: BIODATA */}
-                            <div className="flex-1 space-y-4">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-black text-2xl font-bold shadow">
-                                        <img className="w-full h-full rounded-full object-cover" src={currentUser.foto} alt="" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xl font-bold text-gray-800">{currentUser.fullname}</p>
-                                        <p className="text-gray-500 uppercase">{currentUser.role}</p>
-                                    </div>
+                {/* MOBILE & TABLET: Vertical Layout */}
+                <div className="flex-1 lg:hidden p-6 overflow-y-auto">
+                    <div className="space-y-6">
+                        {/* 1. Profile Card - Mobile */}
+                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-black text-2xl font-bold shadow flex-shrink-0">
+                                    <img className="w-full h-full rounded-full object-cover" src={currentUser.foto} alt="" />
                                 </div>
-
-                                <div className="space-y-2 text-gray-800">
-                                    <div>
-                                        <p className="text-gray-500 text-sm">Username</p>
-                                        <p className="font-medium">{currentUser.username}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-500 text-sm">Gmail</p>
-                                        <p className="font-medium">{currentUser.gmail}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-500 text-sm">Tanggal Lahir</p>
-                                        <p className="font-medium">{formatDate(currentUser.Birthday)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-500 text-sm">Bergabung Pada</p>
-                                        <p className="font-medium">{formatDate(currentUser.created_at)}</p>
-                                    </div>
-                                    <div className="flex gap-3 mt-2 justify-between">
-                                        <button className="w-full bg-blue-500 text-white p-2 rounded-md" onClick={handleBtnEdit}>
-                                            Edit
-                                        </button>
-                                        <button className="w-full bg-red-500 text-white p-2 rounded-md">Logout</button>
-                                    </div>
+                                <div>
+                                    <p className="text-xl font-bold text-gray-800">{currentUser.fullname}</p>
+                                    <p className="text-gray-500 uppercase">{currentUser.role}</p>
                                 </div>
                             </div>
 
-                            {/* RIGHT: QR CODE */}
-                            <div className="flex-none flex items-center justify-center">
+                            <div className="space-y-2 text-gray-800">
+                                <div>
+                                    <p className="text-gray-500 text-sm">Username</p>
+                                    <p className="font-medium">{currentUser.username}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500 text-sm">Gmail</p>
+                                    <p className="font-medium">{currentUser.gmail}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500 text-sm">Tanggal Lahir</p>
+                                    <p className="font-medium">{formatDate(currentUser.Birthday)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-500 text-sm">Bergabung Pada</p>
+                                    <p className="font-medium">{formatDate(currentUser.created_at)}</p>
+                                </div>
+                                <div className="flex gap-3 mt-2">
+                                    <button className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" onClick={handleBtnEdit}>
+                                        Edit
+                                    </button>
+                                    <button className="w-full bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition">Logout</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* QR Code Card - Mobile & Tablet */}
+                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">QR Code</h2>
+                            <div className="flex items-center justify-center">
                                 <img
                                     src={currentUser.qr_token}
                                     alt="QR Code"
-                                    className="w-32 h-32 border rounded-md"
+                                    className="w-40 h-40 md:w-48 md:h-48 border rounded-md"
                                 />
                             </div>
                         </div>
 
-                    </div>
-                    <div className="flex-1 bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
-                        <div className="bg-white w-full p-6 rounded-3xl shadow-lg border border-gray-200">
+                        {/* 2. Statistik Kehadiran */}
+                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
                             <h2 className="text-xl font-bold text-gray-800 mb-4">Statistik Kehadiran</h2>
                             <div className="flex items-center justify-center mb-6">
                                 <div className="w-32 h-32 rounded-full border-4 border-blue-500 flex flex-col items-center justify-center">
@@ -277,11 +246,162 @@ const Profile = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* 3. My Tasks */}
+                        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">My Tasks</h2>
+                            <div className="space-y-4">
+                                {myTasks.length === 0 ? (
+                                    <p className="text-center text-gray-500 py-8">No tasks assigned</p>
+                                ) : (
+                                    myTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className="relative p-4 rounded-xl border border-gray-200 bg-white shadow hover:shadow-lg transition duration-300 overflow-hidden"
+                                        >
+                                            <div
+                                                className={`absolute bottom-0 right-0 w-20 h-20 opacity-40 pointer-events-none rounded-xl
+                                                ${task.task.status === "done" && "bg-gradient-to-br from-green-300 to-green-500"}
+                                                ${task.task.status === "todo" && "bg-gradient-to-br from-yellow-300 to-yellow-500"}
+                                                ${task.task.status === "in progress" && "bg-gradient-to-br from-blue-300 to-blue-500"}`}
+                                                style={{ clipPath: "polygon(100% 0, 0 100%, 100% 100%)" }}
+                                            ></div>
+                                            <h3 className="text-lg font-semibold text-gray-800 mb-1 pr-12">{task.task.title}</h3>
+                                            <p className="text-sm text-gray-500">Status: {task.task.status}</p>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <button
+                                                    className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full shadow hover:bg-blue-600 transition"
+                                                    onClick={() => handleBtnEditMyTask(task)}
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* DESKTOP: Horizontal Layout (Original) */}
+                <div className="hidden lg:flex flex-1 p-8 gap-6 h-full">
+                    {/* LEFT: My Tasks */}
+                    <div className="w-2/3 bg-white rounded-2xl shadow-lg p-6 border border-gray-200 overflow-y-auto h-full">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">My Tasks</h2>
+                        <div className="space-y-4 h-full flex flex-col">
+                            {myTasks.map((task) => (
+                                <div
+                                    key={task.id}
+                                    className="relative p-4 rounded-xl border border-gray-200 bg-white shadow hover:shadow-lg transition duration-300 overflow-hidden"
+                                >
+                                    <div
+                                        className={`absolute bottom-0 right-0 w-20 h-20 opacity-40 pointer-events-none rounded-xl
+                                        ${task.task.status === "done" && "bg-gradient-to-br from-green-300 to-green-500"}
+                                        ${task.task.status === "todo" && "bg-gradient-to-br from-yellow-300 to-yellow-500"}
+                                        ${task.task.status === "in progress" && "bg-gradient-to-br from-blue-300 to-blue-500"}`}
+                                        style={{ clipPath: "polygon(100% 0, 0 100%, 100% 100%)" }}
+                                    ></div>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-1">{task.task.title}</h3>
+                                    <p className="text-sm text-gray-500">Status: {task.task.status}</p>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        <button
+                                            className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full shadow hover:bg-blue-600 transition"
+                                            onClick={() => handleBtnEditMyTask(task)}
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Profile + Statistik */}
+                    <div className="w-1/3 flex flex-col gap-6 h-full">
+                        <div className="flex-1 bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
+                            <div className="bg-white w-full p-6 rounded-3xl shadow-lg border border-gray-200 flex flex-row gap-6">
+                                {/* LEFT: BIODATA */}
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-black text-2xl font-bold shadow">
+                                            <img className="w-full h-full rounded-full object-cover" src={currentUser.foto} alt="" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xl font-bold text-gray-800">{currentUser.fullname}</p>
+                                            <p className="text-gray-500 uppercase">{currentUser.role}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2 text-gray-800">
+                                        <div>
+                                            <p className="text-gray-500 text-sm">Username</p>
+                                            <p className="font-medium">{currentUser.username}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-sm">Gmail</p>
+                                            <p className="font-medium">{currentUser.gmail}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-sm">Tanggal Lahir</p>
+                                            <p className="font-medium">{formatDate(currentUser.Birthday)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-500 text-sm">Bergabung Pada</p>
+                                            <p className="font-medium">{formatDate(currentUser.created_at)}</p>
+                                        </div>
+                                        <div className="flex gap-3 mt-2 justify-between">
+                                            <button className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition" onClick={handleBtnEdit}>
+                                                Edit
+                                            </button>
+                                            <button className="w-full bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition">Logout</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* RIGHT: QR CODE */}
+                                <div className="flex-none flex items-center justify-center">
+                                    <img
+                                        src={currentUser.qr_token}
+                                        alt="QR Code"
+                                        className="w-32 h-32 border rounded-md"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 bg-white p-6 rounded-3xl shadow-lg border border-gray-200">
+                            <div className="bg-white w-full p-6 rounded-3xl shadow-lg border border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">Statistik Kehadiran</h2>
+                                <div className="flex items-center justify-center mb-6">
+                                    <div className="w-32 h-32 rounded-full border-4 border-blue-500 flex flex-col items-center justify-center">
+                                        <p className="text-3xl font-bold text-blue-600">{persen}%</p>
+                                        <p className="text-xs text-gray-500 -mt-1">Kehadiran</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <p className="text-gray-500">Total Hari Kerja</p>
+                                        <p className="font-semibold">{lamaKerja}</p>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <p className="text-gray-500">Hadir</p>
+                                        <p className="font-semibold">{totalHadir}</p>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <p className="text-gray-500">Terlambat</p>
+                                        <p className="font-semibold text-yellow-600">{totalTelat}</p>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <p className="text-gray-500">Tidak Hadir</p>
+                                        <p className="font-semibold text-red-600">{totalAlpa}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            </div>
-
 
             {/* MODAL EDIT PROFILE */}
             <Modal isOpen={isModalEdit} onClose={() => setIsModalEdit(false)} title="Edit Profile">
@@ -324,16 +444,15 @@ const Profile = () => {
                         <button
                             type="button"
                             onClick={() => setIsModalEdit(false)}
-                            className="px-4 py-2 bg-gray-500 text-white rounded"
+                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
                         >
                             Batal
                         </button>
-                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
                             Simpan
                         </button>
                     </div>
                 </form>
-               
             </Modal>
 
             {/* MODAL EDIT TASK */}
@@ -358,11 +477,11 @@ const Profile = () => {
                         <button
                             type="button"
                             onClick={() => setIsModalEditMyTask(false)}
-                            className="px-4 py-2 bg-gray-500 text-white rounded"
+                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
                         >
                             Batal
                         </button>
-                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+                        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
                             Simpan
                         </button>
                     </div>

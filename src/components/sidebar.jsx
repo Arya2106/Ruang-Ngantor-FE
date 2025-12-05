@@ -1,24 +1,46 @@
 import React, { useState } from 'react';
-import { Home, Building, BarChart, Settings, Users, X, ChevronRight, Calendar, LogOut,} from 'lucide-react';
-import { Link } from 'react-router-dom'; // <-- pakai ini
+import { Home, Building, BarChart, Settings, Users, X, ChevronRight, Calendar, LogOut, MessageCircle,} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom'; // <-- pakai ini
 import { UserContext } from './UserContext';
 
 
 export default function Sidebar() {
     const {currentUser} = React.useContext(UserContext);
     const [isOpen, setIsOpen] = useState(true);
-    const [activeItem, setActiveItem] = useState('dashboard');
+    const [activeItem, setActiveItem] = useState();
     const { logout } = React.useContext(UserContext);
 
-    const menuItems = [
-        { id: 'dashboard', icon: Home, label: 'Dashboard', badge: null ,link:'/Dashboard'},
-        { id: 'users', icon: Users, label: 'Users', badge: null, link:'/users' },
-        { id: 'products', icon: Building, label: 'Ruang', badge: null, link:'/rooms' },
-        { id: 'settings', icon: Settings, label: 'Task', badge:null, link:'/tasks' },
-        { id: 'Attendance', icon: Calendar, label: 'Absensi' ,link:'/attendances' },
-        { id: 'profile', icon: Users, label: 'Profile' ,link:'/profile' }
+    const location = useLocation();
 
+    const role = currentUser?.role || '';
+   
+   
+
+   
+    const menuItems = [
+        { id: 'dashboard', icon: Home, label: 'Dashboard', link: '/dashboard', roles: ['admin'] },
+
+        { id: 'users', icon: Users, label: 'Users', link: '/users', roles: ['admin', 'leader'] },
+
+        { id: 'products', icon: Building, label: 'Ruang', link: '/rooms', roles: ['admin', 'leader', ] },
+
+        { id: 'settings', icon: Settings, label: 'Task', link: '/tasks', roles: ['admin', 'leader'] },
+
+        { id: 'attendances', icon: Calendar, label: 'Attendances', link: '/attendances', roles: ['admin', 'leader'] },
+
+        { id: 'products', icon: Building, label: 'Ruang', link: '/myrooms', roles: ['leader','anggota'] },
+
+        { id: 'my_attendance', icon: Calendar, label: 'My Attendance', link: '/myattendance', roles: ['leader', 'anggota'] },
+        { id: 'attendance', icon: Calendar, label: 'Attendance', link: '/attendance', roles: ['leader', 'anggota'] },
+
+        { id: 'chats', icon: MessageCircle, label: 'Chats', link: '/chats', roles: ['admin', 'leader', 'anggota'] },
+
+        { id: 'profile', icon: Users, label: 'Profile', link: '/profile', roles: ['admin', 'leader', 'anggota'] },
     ];
+
+    const filteredMenu = menuItems.filter(item =>
+        item.roles.includes('all') || item.roles.includes(role)
+    );
 
     return (
         <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
@@ -83,9 +105,9 @@ export default function Sidebar() {
                     {/* Navigation */}
                     <nav className="flex-1 p-4 overflow-y-auto">
                         <ul className="space-y-2">
-                            {menuItems.map((item, index) => {
+                            {filteredMenu.map((item, index) => {
                                 const Icon = item.icon;
-                                const isActive = activeItem === item.id;
+                                const isActive = location.pathname.toLowerCase() === item.link.toLowerCase();
 
                                 return (
                                     <li

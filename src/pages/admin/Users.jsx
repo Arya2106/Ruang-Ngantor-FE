@@ -1,24 +1,22 @@
-
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebar";
 import axios from "axios";
 import API from "../../api/API";
 import SearchBar from "../../components/searchbar";
-import { PlusIcon,EditIcon,TrashIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon, MessageCircle } from "lucide-react";
 import Modal from "../../components/modal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FilterBar from "../../components/filterbar";
 import Card from "../../components/card";
-
-
-
+import { useNavigate } from "react-router-dom";
 
 const Users = () => {
-    const [users,SetUsers]=useState([]);
+    const navigate = useNavigate();
+    const [users, SetUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [formData, setFormData] = useState({
-        id : null,
+        id: null,
         username: "",
         fullname: "",
         gmail: "",
@@ -26,17 +24,15 @@ const Users = () => {
         password: "",
         role: "",
         foto: "",
-
     });
     const [filtersdata, setFiltersData] = useState({
         role: "",
         rooms: "",
-        });
+    });
     const [isOpen, setIsOpen] = useState(false);
     const [isOpen2, setIsOpen2] = useState(false);
     const [isOpen3, setIsOpen3] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-
 
     const usersPerPage = 8;
 
@@ -46,10 +42,10 @@ const Users = () => {
 
     const resetfilters = () => {
         setFiltersData({
-            role : "",
-            rooms : "",
+            role: "",
+            rooms: "",
         });
-    }
+    };
 
     const filtersConfig = [
         {
@@ -76,21 +72,19 @@ const Users = () => {
         },
     ];
 
-    
-
     const fetchUsers = async () => {
-        try{
-        axios.get(API + "users").then(Response => {
-            SetUsers(Response.data);
-        })
-    }catch(error){
-        console.log(error);
-    }
-    }
+        try {
+            axios.get(API + "users").then(Response => {
+                SetUsers(Response.data);
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-    }
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -101,15 +95,14 @@ const Users = () => {
         reader.onloadend = () => {
             setFormData(prev => ({
                 ...prev,
-                foto: reader.result   // hasil base64 lengkap dengan prefix
+                foto: reader.result
             }));
         };
     };
 
-
     const handleBtnEdit = (user) => {
         setFormData({
-            id : user.id,
+            id: user.id,
             username: user.username,
             fullname: user.fullname,
             password: user.password,
@@ -119,51 +112,55 @@ const Users = () => {
             foto: user.foto
         });
         setIsOpen2(true);
-    }
+    };
 
     const handleBtnDelete = (user) => {
         setFormData({ id: user.id });
         setIsOpen3(true);
-    }
+    };
+
+    // Handler untuk navigasi ke chat
+    const handleChatWithUser = (userId) => {
+        navigate(`/chat/personal/${userId}`);
+    };
 
     const handleSubmit = async (e) => {
-        try{
-        e.preventDefault();
-        await axios.post(API + "users", formData);
-        setIsOpen(false);
-        setFormData({ username: "", fullname: "", password: "", role: "" ,gmail: "",Birthday: ""}); // reset form
-        fetchUsers();
-        toast.success("User added successfully");
-        }catch(error){
+        try {
+            e.preventDefault();
+            await axios.post(API + "users", formData);
+            setIsOpen(false);
+            setFormData({ username: "", fullname: "", password: "", role: "", gmail: "", Birthday: "" });
+            fetchUsers();
+            toast.success("User added successfully");
+        } catch (error) {
             console.log(error);
             toast.error("Failed to add user");
         }
-    }
+    };
 
     const handleSubmitEdit = async (e) => {
         e.preventDefault();
-        try{
+        try {
             await axios.put(API + "users/" + formData.id, formData);
             setIsOpen2(false);
             fetchUsers();
             toast.success("User updated successfully");
-        }catch(error){
+        } catch (error) {
             console.log(error);
             toast.error("Failed to update user");
         }
-    }
+    };
 
     const handleDelete = async (id) => {
-        try{
+        try {
             await axios.delete(API + "users/" + id);
-
             fetchUsers();
             toast.success("User deleted successfully");
-        }catch(error){
+        } catch (error) {
             console.log(error);
             toast.error("Failed to delete user");
         }
-    }
+    };
 
     const searchUser = users.filter((user) => {
         if (searchTerm === "") return true;
@@ -181,19 +178,16 @@ const Users = () => {
     const totalPages = Math.ceil(searchUser.length / usersPerPage);
 
     const nextPage = () => {
-      if(currentPage < totalPages){
-        setCurrentPage(currentPage + 1);
-      }
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
     };
 
     const prevPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
         }
-
     };
-
-
 
     useEffect(() => {
         fetchUsers();
@@ -203,10 +197,9 @@ const Users = () => {
         setCurrentPage(1);
     }, [searchTerm]);
 
-
     return (
         <>
-        <ToastContainer />
+            <ToastContainer />
             <div className="flex h-screen overflow-hidden">
                 <Sidebar />
 
@@ -243,17 +236,36 @@ const Users = () => {
                                     fullname={user.fullname}
                                     role={user.role}
                                     stats={[]}
-                                    
                                 >
-                                    <div className="flex justify-end space-x-5">
-                                        <button onClick={() => handleBtnEdit(user)}>
-                                            <EditIcon size={20} className="text-black" />
+                                    <div className="flex justify-end space-x-2">
+                                        {/* Chat Button */}
+                                        <button
+                                            onClick={() => handleChatWithUser(user.id)}
+                                            className="p-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors duration-200 group"
+                                            title="Chat"
+                                        >
+                                            <MessageCircle size={18} className="text-white" />
                                         </button>
-                                        <button onClick={() => handleBtnDelete(user)}>
-                                            <TrashIcon size={20} className="text-black" />
+
+                                        {/* Edit Button */}
+                                        <button
+                                            onClick={() => handleBtnEdit(user)}
+                                            className="p-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors duration-200"
+                                            title="Edit"
+                                        >
+                                            <EditIcon size={18} className="text-white" />
+                                        </button>
+
+                                        {/* Delete Button */}
+                                        <button
+                                            onClick={() => handleBtnDelete(user)}
+                                            className="p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-200"
+                                            title="Delete"
+                                        >
+                                            <TrashIcon size={18} className="text-white" />
                                         </button>
                                     </div>
-                                    </Card>
+                                </Card>
                             ))
                         ) : (
                             <p className="text-gray-500 col-span-full text-center">
@@ -261,7 +273,8 @@ const Users = () => {
                             </p>
                         )}
                     </div>
-                   <div>
+
+                    <div>
                         {/* Pagination Section */}
                         {totalPages > 1 && (
                             <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 py-4 mt-10">
@@ -298,21 +311,16 @@ const Users = () => {
                                 </div>
                             </div>
                         )}
-
-                   </div>
+                    </div>
                 </div>
-                
             </div>
 
-          
-
-
-                    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Add User">
-                       <form onSubmit={handleSubmit}>
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="" className="text-gray-500 text-sm">Username</label>
-                            <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
-                        </div>
+            <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Add User">
+                <form onSubmit={handleSubmit}>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="" className="text-gray-500 text-sm">Username</label>
+                        <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                    </div>
                     <div className="flex flex-col gap-2 mt-3">
                         <label htmlFor="" className="text-gray-500 text-sm">Fullname</label>
                         <input type="text" name="fullname" value={formData.fullname} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
@@ -326,88 +334,82 @@ const Users = () => {
                             onChange={handleFileChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black"
                         />
-
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label htmlFor="gmail" className="text-gray-500 text-sm">gmail</label>
-                        <input type="gmail" name="gmail" value={formData.gmail} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                        <label htmlFor="gmail" className="text-gray-500 text-sm">Gmail</label>
+                        <input type="email" name="gmail" value={formData.gmail} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label htmlFor="" className="text-gray-500 text-sm">BirthDay</label>
+                        <label htmlFor="" className="text-gray-500 text-sm">Birthday</label>
                         <input type="date" name="Birthday" value={formData.Birthday} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
                     </div>
                     <div className="flex flex-col gap-2 mt-3">
                         <label htmlFor="" className="text-gray-500 text-sm">Password</label>
-                        <input type="text" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                        <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
                     </div>
                     <div className="flex flex-col gap-2 mt-3">
                         <label htmlFor="" className="text-gray-500 text-sm">Role</label>
                         <select name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black">
                             <option value="">Select Role</option>
                             <option value="admin">Admin</option>
-                            <option value="leader">leader</option>
-                            <option value="anggota">anggota</option>
+                            <option value="leader">Leader</option>
+                            <option value="anggota">Anggota</option>
                         </select>
                     </div>
                     <div className="mt-6 flex justify-end space-x-3">
-                      
                         <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition" type="submit">
                             Add User
                         </button>
                     </div>
-                       </form>
+                </form>
+            </Modal>
 
-                     
-            
-                    </Modal>
-                    <Modal isOpen={isOpen2} onClose={() => setIsOpen2(false)} title={"Edit User"}>
-                        <form onSubmit={handleSubmitEdit}>
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="" className="text-gray-500 text-sm">Username</label>
-                                    <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="" className="text-gray-500 text-sm">Fullname</label>
-                                    <input type="text" name="fullname" value={formData.fullname} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
-                                </div>
-                  
-
-
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="" className="text-gray-500 text-sm">Password</label>
-                                    <input type="text" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="" className="text-gray-500 text-sm">Role</label>
-                                    <select name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black">
-                                        <option value="">Select Role</option>
+            <Modal isOpen={isOpen2} onClose={() => setIsOpen2(false)} title={"Edit User"}>
+                <form onSubmit={handleSubmitEdit}>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="" className="text-gray-500 text-sm">Username</label>
+                        <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="" className="text-gray-500 text-sm">Fullname</label>
+                        <input type="text" name="fullname" value={formData.fullname} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="" className="text-gray-500 text-sm">Password</label>
+                        <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="" className="text-gray-500 text-sm">Role</label>
+                        <select name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black">
+                            <option value="">Select Role</option>
                             <option value="admin">Admin</option>
-                            <option value="leader">leader</option>
-                            <option value="anggota">anggota</option>
-                                    </select>
-                                </div>
-                                <div className="mt-6 flex justify-end space-x-3">
-                                    <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition" type="submit">
-                                        Update User
-                                    </button>
-                                </div>
-                        </form>
-                    </Modal>
-            <Modal isOpen={isOpen3} onClose={()=> setIsOpen3(false)} title={"Delete User"}>
+                            <option value="leader">Leader</option>
+                            <option value="anggota">Anggota</option>
+                        </select>
+                    </div>
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition" type="submit">
+                            Update User
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal isOpen={isOpen3} onClose={() => setIsOpen3(false)} title={"Delete User"}>
                 <div>
-                    Apakah anda yakin Menghapus User ini ?
+                    Apakah anda yakin menghapus user ini?
                 </div>
                 <div className="flex justify-end space-x-5 p-5">
                     <button onClick={() => setIsOpen3(false)} className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                         Cancel
                     </button>
-                    <button onClick={()=> handleDelete(formData.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                    <button onClick={() => handleDelete(formData.id)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
                         Delete
                     </button>
                 </div>
             </Modal>
         </>
-    )
-}
+    );
+};
 
 export default Users;

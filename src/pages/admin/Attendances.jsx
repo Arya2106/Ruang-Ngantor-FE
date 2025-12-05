@@ -444,8 +444,8 @@ const Attendances = () => {
       <Modal isOpen={isModalOpen} title="Detail Absensi" onClose={() => { }}>
         <form onSubmit={handleSubmitEdit}>
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2">Status:</label>
-            <select className="w-full border border-gray-300 rounded px-3 py-2" value={formData.status} name="status" onChange={handleChange} required>
+            <label className="block text-white font-bold mb-2">Status:</label>
+            <select className="w-full border border-gray-300 rounded px-3 py-2 text-black" value={formData.status} name="status" onChange={handleChange} required>
               <option value="present">Hadir</option>
               <option value="absent">Tidak Hadir</option>
               <option value="late">Terlambat</option>
@@ -454,9 +454,9 @@ const Attendances = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2">Catatan:</label>
+            <label className="block text-white font-bold mb-2">Catatan:</label>
             <textarea
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-black"
               value={formData.note || ''}
               name="note"
               onChange={handleChange}
