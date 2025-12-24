@@ -74,13 +74,24 @@ const Users = () => {
 
     const fetchUsers = async () => {
         try {
-            axios.get(API + "users").then(Response => {
-                SetUsers(Response.data);
-            })
+            const res = await axios.get(API + "users", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+
+            SetUsers(res.data);
         } catch (error) {
-            console.log(error);
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                navigate("/login", { replace: true });
+            } else {
+                console.log(error);
+                toast.error("Gagal mengambil data user");
+            }
         }
     };
+
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -156,6 +167,7 @@ const Users = () => {
             await axios.delete(API + "users/" + id);
             fetchUsers();
             toast.success("User deleted successfully");
+            setIsOpen3(false);
         } catch (error) {
             console.log(error);
             toast.error("Failed to delete user");

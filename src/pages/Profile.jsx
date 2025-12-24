@@ -7,15 +7,18 @@ import API from "../api/API";
 import Modal from "../components/modal";
 import { toast, ToastContainer } from "react-toastify";
 import { Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
     const { currentUser, refreshUser } = useContext(UserContext);
+    const navigate =useNavigate();
     const [myTasks, setMyTasks] = useState([]);
     const [myAttendance, setMyAttendance] = useState([]);
     const [isModalEdit, setIsModalEdit] = useState(false);
     const [isModalEditMyTask, setIsModalEditMyTask] = useState(false);
     const [formEdit, setFormEdit] = useState({
         id: "",
+        foto: "",
         fullname: "",
         username: "",
         gmail: "",
@@ -28,6 +31,7 @@ const Profile = () => {
         description: "",
     });
 
+
     // Loading state jika user belum siap
     if (!currentUser) {
         return (
@@ -38,6 +42,20 @@ const Profile = () => {
             </div>
         );
     }
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setFormEdit(prev => ({
+                ...prev,
+                foto: reader.result // base64 full data:image/xxx;base64,...
+            }));
+        };
+        reader.readAsDataURL(file);
+    };
 
     // ==================== HANDLER ====================
     const handleChange = (e) => {
@@ -51,6 +69,7 @@ const Profile = () => {
             gmail: currentUser.gmail,
             password: "",
             Birthday: currentUser.Birthday ? currentUser.Birthday.split("T")[0] : "",
+            foto: currentUser.foto,
         });
         setIsModalEdit(true);
     };
@@ -91,9 +110,18 @@ const Profile = () => {
     // ==================== FETCH DATA ====================
     const fetchMyTasks = async () => {
         try {
-            const res = await axios.get(`${API}task_assignments`);
+            const res = await axios.get(`${API}task_assignments`,{
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
             setMyTasks(res.data.filter(task => Number(task.user.id) === Number(currentUser.id)));
         } catch (error) {
+            if (error.response?.status === 401) {
+                toast.error("Token expired atau tidak valid. Silakan login kembali.");
+                localStorage.removeItem("token");
+                navigate ("/login", { replace: true });
+            }
             console.log(error);
         }
     };
@@ -155,6 +183,9 @@ const Profile = () => {
     const totalHadir = hitungBerdasarkanStatus("present");
     const totalTelat = hitungBerdasarkanStatus("late");
     const totalAlpa = hitungBerdasarkanStatus("absent");
+    const totalIzin = hitungBerdasarkanStatus("on_leave");
+    const totalSakit = hitungBerdasarkanStatus("sick");
+    const totaltidakHadir = totalAlpa + totalIzin + totalSakit;
     const persen = Math.round((totalHadir / totalHariKerja) * 100);
     const lamaKerja = getLamaKerja(currentUser.created_at);
 
@@ -242,12 +273,14 @@ const Profile = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <p className="text-gray-500">Tidak Hadir</p>
-                                    <p className="font-semibold text-red-600">{totalAlpa}</p>
+                                    <p className="font-semibold text-red-600">{totalAlpa + totalIzin + totalSakit} </p>
                                 </div>
                             </div>
                         </div>
 
                         {/* 3. My Tasks */}
+                        <div className="flex flex-col gap-6">
+
                         <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                             <h2 className="text-2xl font-bold text-gray-800 mb-4">My Tasks</h2>
                             <div className="space-y-4">
@@ -283,8 +316,13 @@ const Profile = () => {
                         </div>
                     </div>
                 </div>
+                <div className="bg-white p-6 rounded-3xl shadow-lg border border-gray-200 mb-6">
+                    <h2>Permohohnan Izin</h2>
+                </div>
+                            </div>
 
                 {/* DESKTOP: Horizontal Layout (Original) */}
+
                 <div className="hidden lg:flex flex-1 p-8 gap-6 h-full">
                     {/* LEFT: My Tasks */}
                     <div className="w-2/3 bg-white rounded-2xl shadow-lg p-6 border border-gray-200 overflow-y-auto h-full">
@@ -394,7 +432,7 @@ const Profile = () => {
                                     </div>
                                     <div className="flex justify-between">
                                         <p className="text-gray-500">Tidak Hadir</p>
-                                        <p className="font-semibold text-red-600">{totalAlpa}</p>
+                                        <p className="font-semibold text-red-600">{totaltidakHadir}</p>
                                     </div>
                                 </div>
                             </div>
@@ -440,6 +478,15 @@ const Profile = () => {
                         placeholder="Password"
                         className="w-full border rounded p-2"
                     />
+                    <div>
+                        <label className="block mb-1 font-medium">Foto Profil</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoChange}
+                            className="w-full border rounded p-2"
+                        />
+                    </div>
                     <div className="flex justify-end gap-2">
                         <button
                             type="button"

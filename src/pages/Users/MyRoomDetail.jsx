@@ -8,6 +8,7 @@ import Card from "../../components/card";
 import { ActivityIcon, Clipboard } from "lucide-react";
 import Modal from "../../components/modal";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const MyRoomDetail = () => {
 
@@ -34,13 +35,24 @@ const MyRoomDetail = () => {
 
     const fetchRoom = async () => {
         try {
-            const response = await axios.get(API + "rooms");
+            const response = await axios.get(API + "rooms", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
             const selectedRoom = response.data.find(
                 (room) => room.id === parseInt(id)
             );
             setRoom(selectedRoom || {});
         } catch (error) {
+            if (error.response?.status === 401 ){
+                localStorage.removeItem("token");
+                console.log("Token expired atau tidak valid. Silakan login kembali.");
+                navigate("/login", { replace: true });
+            } else {
             console.log(error);
+            toast.error("Gagal mengambil data room");
+            }
         }
     };
 
@@ -48,16 +60,31 @@ const MyRoomDetail = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(API + "users");
+            const response = await axios.get(API + "users", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
             SetUsers(response.data);
         } catch (error) {
+            if (error.response?.status === 401 ){
+                localStorage.removeItem("token");
+                console.log("Token expired atau tidak valid. Silakan login kembali.");
+                navigate("/login", { replace: true });
+            } else {
             console.log(error);
+            toast.error("Gagal mengambil data users");
+            }
         }
     };
 
     const fetchMembers = async () => {
         try {
-            const response = await axios.get(API + "room_membership");
+            const response = await axios.get(API + "room_membership",
+                { headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                }, }
+            );
             const data = response.data || [];
             const filteredMembers = data.filter(
                 (member) => member.room && member.room.id === parseInt(id)

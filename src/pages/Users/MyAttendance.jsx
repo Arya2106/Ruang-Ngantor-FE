@@ -5,20 +5,23 @@ import dayjs from "dayjs";
 import { UserContext } from "../../components/UserContext";
 import API from "../../api/API";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import { Form } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
 
 dayjs.extend(isSameOrAfter);
 
 export default function MyAttendance() {
     const { currentUser } = useContext(UserContext);
     const token = localStorage.getItem("token");
-
+   const [attachmentBase64, setAttachmentBase64] = useState(null);
     const [attendance, setAttendance] = useState([]);
-
+    const [pendingRejectRequest, setpendingRejectRequest] = useState([]);
     // modal state
     const [showModal, setShowModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [leaveType, setLeaveType] = useState("on_leave");
     const [reason, setReason] = useState("");
+    const [base64, setBase64] = useState("");
 
     // =====================
     // INIT MONTH FROM JOIN DATE
@@ -51,19 +54,93 @@ export default function MyAttendance() {
         }
     };
 
+    const fetchpendingRejectRequest = async () => {
+        try {
+            const res = await axios.get(API + "attendance_requests/my_requests", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const mypendingRejectRequest = res.data.filter(
+                request => ["pending", "rejected"].includes(request.status)
+            );
+
+
+            setpendingRejectRequest(mypendingRejectRequest ?? []);
+        } catch (err) {
+            console.error("API ERROR:", err);
+            setpendingRejectRequest([]);
+        }
+    };
+
+    async function handleRequestAttendanceSubmit(e) {
+        e.preventDefault();
+
+        try {
+            await axios.post(API + "attendance_requests", {
+                user_id: currentUser.id,
+                room_id: 3,
+                request_date: selectedDate,
+                request_type: leaveType,
+                reason: reason,
+                file_proof: attachmentBase64, // ⬅ kirim Base64
+            });
+
+            toast.success("Izin berhasil diajukan");
+            setShowModal(false);
+            fetchpendingRejectRequest();
+
+        } catch (err) {
+            console.error("SUBMIT ERROR:", err);
+            alert("Gagal mengajukan izin");
+        }
+    }
+
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validasi wajib foto
+        if (!file.type.startsWith("image/")) {
+            alert("File harus berupa foto!");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setAttachmentBase64(reader.result); // hasil full base64: data:image/jpeg;base64,....
+        };
+        reader.readAsDataURL(file);
+    };
+
+
     useEffect(() => {
+        fetchpendingRejectRequest();
         fetchAttendance();
     }, [token]);
 
     // =====================
     // MAP DATE -> STATUS
     // =====================
+    
     const attendanceMap = new Map(
+        
         attendance.map(item => [
-            dayjs(item.check_in).format("YYYY-MM-DD"),
+            dayjs(item.attendance_date).format("YYYY-MM-DD"),
             item.status,
         ])
+        
     );
+
+    const pendingRejectRequestMap = new Map(
+        pendingRejectRequest.map(item => [
+            dayjs(item.request_date).format("YYYY-MM-DD"),
+            item.status,
+            item.request_type,
+        ])
+    );
+
 
     // =====================
     // DATE LOGIC
@@ -94,7 +171,7 @@ export default function MyAttendance() {
     const totalPresent = attendance.filter(i => i.status === "present").length;
     const totalLate = attendance.filter(i => i.status === "late").length;
     const totalLeave = attendance.filter(i => i.status === "on_leave").length;
-    const totalAbsent = attendance.filter(i => i.status === "absent").length;
+    const totalSick = attendance.filter(i => i.status === "sick").length;
 
     // =====================
     // CLICK DATE HANDLER
@@ -108,7 +185,7 @@ export default function MyAttendance() {
         const isTodayOrFuture = targetDate.isSameOrAfter(today, 'day');
 
         // ❌ block: today, past, atau sudah ada status
-        if (!isTodayOrFuture || status) return;
+        if (!isTodayOrFuture || status || pendingRejectRequestMap.get(date) ) return;
 
         setSelectedDate(date);
         setShowModal(true);
@@ -118,41 +195,6 @@ export default function MyAttendance() {
     // =====================
     // SUBMIT IZIN
     // =====================
-    const submitLeave = async () => {
-
-        if (!reason.trim()) {
-            alert("Alasan wajib diisi!");
-            return;
-        }
-
-        try {
-            await axios.post(API + "request-leave",
-                {
-                    date: selectedDate,
-                    reason,
-                    type: leaveType,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                }
-            );
-
-            alert("Pengajuan izin berhasil dikirim");
-
-            setShowModal(false);
-            setSelectedDate(null);
-            setReason("");
-            setLeaveType("on_leave");
-
-            fetchAttendance();
-
-        } catch (err) {
-            console.error("SUBMIT ERROR:", err);
-            alert("Gagal mengajukan izin");
-        }
-    };
 
     // =====================
     // STATUS STYLE
@@ -161,28 +203,32 @@ export default function MyAttendance() {
         present: "bg-green-100",
         late: "bg-yellow-100",
         on_leave: "bg-orange-100",
-        absent: "bg-red-100",
+        sick: "bg-red-100",
     };
 
     const badgeStatus = {
         present: "bg-green-500",
         late: "bg-yellow-500",
         on_leave: "bg-orange-500",
-        absent: "bg-red-500",
+        sick: "bg-red-500",
     };
 
     const labelStatus = {
         present: "Hadir",
         late: "Terlambat",
         on_leave: "Izin",
-        absent: "Tidak Hadir",
+        sick: "Sakit",
     };
+
+
 
 
     // =====================
     // RENDER
     // =====================
     return (
+        <>
+            <ToastContainer />
         <div className="flex h-screen bg-gray-50">
             <Sidebar />
 
@@ -199,7 +245,7 @@ export default function MyAttendance() {
                         <SummaryCard title="Hadir" count={totalPresent} color="green" />
                         <SummaryCard title="Terlambat" count={totalLate} color="yellow" />
                         <SummaryCard title="Izin" count={totalLeave} color="orange" />
-                        <SummaryCard title="Tidak Hadir" count={totalAbsent} color="red" />
+                        <SummaryCard title="Sick" count={totalSick} color="red" />
                     </div>
                 </div>
 
@@ -258,12 +304,14 @@ export default function MyAttendance() {
 
                             const day = dayjs(date).date();
                             const status = attendanceMap.get(date);
+                            const isPending = pendingRejectRequestMap.get(date) === "pending";
+                            const isRejected = pendingRejectRequestMap.get(date) === "rejected";
                             const isToday = today === date;
 
                             const isRequestable =
                                 dayjs(date).startOf("day")
                                     .isSameOrAfter(dayjs().startOf("day")) &&
-                                !status;
+                                !status && !isPending && !isRejected;
 
 
                             return (
@@ -275,6 +323,9 @@ export default function MyAttendance() {
                                         ${bgStatus[status] || ""}
                                         ${isToday ? "ring-2 ring-blue-500" : ""}
                                         ${isRequestable ? "cursor-pointer hover:bg-blue-100" : ""}
+                                        ${isPending ? "bg-blue-100" : ""}
+                                        ${isRejected ? "bg-red-500" : ""}
+                                        
                                     `}
                                 >
                                     <span className="absolute top-2 right-2 text-sm font-bold"> 
@@ -288,15 +339,34 @@ export default function MyAttendance() {
                                             </span>
                                         </div>
                                     )}
+                                    {isPending && (
+                                        <div className="mt-8 text-center">
+                                            <span className="px-2 py-1 text-xs text-white rounded bg-blue-500">
+                                                Pending
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {isRejected && (
+                                        <div className="mt-8 text-center">
+                                            <span className="px-2 py-1 text-xs text-white rounded bg-red-600">
+                                                Rejected
+                                            </span>
+                                        </div>
+                                    )}
+
                                 </div>
                             );
                         })}
+                        
                     </div>
 
                 </div>
 
                 {/* ================= MODAL ================= */}
                 {showModal && (
+                    <form onSubmit={handleRequestAttendanceSubmit}>
+
                     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
 
                         <div className="bg-white w-full max-w-md p-6 rounded-xl shadow-lg">
@@ -317,7 +387,7 @@ export default function MyAttendance() {
                                     className="w-full border p-2 rounded"
                                 >
                                     <option value="on_leave">Izin</option>
-                                    <option value="sick">Sakit</option>
+                                    <option value="Sick">Sakit</option>
                                 </select>
                             </div>
 
@@ -331,6 +401,15 @@ export default function MyAttendance() {
                                 />
                             </div>
 
+                            <div>
+                                <label>Upload Bukti</label>
+                                <input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    className="w-full border p-2 rounded"
+                                />
+                            </div>
+
                             <div className="flex justify-end gap-3">
                                 <button
                                     onClick={() => setShowModal(false)}
@@ -340,7 +419,7 @@ export default function MyAttendance() {
                                 </button>
 
                                 <button
-                                    onClick={submitLeave}
+                                    type="submit"
                                     className="px-4 py-2 bg-blue-600 text-white rounded"
                                 >
                                     Kirim
@@ -348,10 +427,12 @@ export default function MyAttendance() {
                             </div>
                         </div>
                     </div>
+                                    </form>
                 )}
 
             </div>
         </div>
+        </>
     );
 }
 

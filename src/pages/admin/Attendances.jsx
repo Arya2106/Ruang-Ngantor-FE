@@ -14,6 +14,8 @@ import 'react-circular-progressbar/dist/styles.css';
 const Attendances = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedDetailRequest, setSelectedDetailRequest] = useState(null);
+  const [DetailModalRequest, setDetailModalRequest] = useState(false);
   const [attendances, setAttendances] = useState([]);
   const [roomMemberships, setRoomMemberships] = useState([]);
   const [formData, setFormData] = useState({
@@ -28,6 +30,7 @@ const Attendances = () => {
   const [roomStats, setRoomStats] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [users, setUsers] = useState([]);
+  const [attendanceRequest, setAttendanceRequest] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => {
     const now = new Date();
@@ -41,8 +44,12 @@ const Attendances = () => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const getFullname = (userId) =>
+    users.find(u => u.id === userId)?.fullname || "Unknown User";
 
 
+
+  
   // ========================= FETCH FUNCTIONS =========================
   const fetchAttendances = async () => {
     try {
@@ -51,6 +58,17 @@ const Attendances = () => {
       calculateAttendancePercentage(res.data, selectedMonth);
     } catch (error) {
       console.error("Error fetching attendances:", error);
+    }
+  };
+
+  const fetchAttendanceRequests = async () => {
+    try {
+      const res = await axios.get(API + "attendance_requests");
+      const pendingOnly = res.data.filter(request => request.status === "pending");
+      console.log("Pending Requests:", pendingOnly); // Debug: cek data request
+      setAttendanceRequest(pendingOnly);
+    } catch (error) {
+      console.error("Error fetching attendance requests:", error);
     }
   };
 
@@ -164,7 +182,38 @@ const Attendances = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const handleBtnDetail = (request) => {
+    setSelectedDetailRequest(request);
+    setDetailModalRequest(true);
+  }
 
+  async function handleAproveRequest (e, requestId) {
+    e.preventDefault();
+    try {
+      await axios.post(API + "attendance_requests/" + requestId + "/approve");
+      toast.success("Request approved successfully");
+      setDetailModalRequest(false);
+      fetchAttendanceRequests();
+      fetchAttendances();
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to approve request");
+    }
+  }
+
+  async function handleRejectRequest (e, requestId) {
+    e.preventDefault();
+    try {
+      await axios.post(API + "attendance_requests/" + requestId + "/reject");
+      toast.success("Request rejected successfully");
+      setDetailModalRequest(false);
+      fetchAttendanceRequests();
+      fetchAttendances();
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to reject request");
+    }
+  }
   // ========================= HANDLE EDIT SUBMIT =========================
   async function handleSubmitEdit(e) {
     e.preventDefault();
@@ -231,6 +280,7 @@ const Attendances = () => {
 
   // ========================= HOOKS =========================
   useEffect(() => {
+    fetchAttendanceRequests();
     fetchAttendances();
     fetchRooms();
     fetchUsers();
@@ -262,7 +312,7 @@ const Attendances = () => {
 
     // Cari attendance user untuk tanggal yang dipilih
     const userAttendances = attendances.filter(
-      att => att.user?.id === user.id && att.check_in?.slice(0, 10) === selectedDate
+      att => att.user?.id === user.id && att.attendance_date?.slice(0, 10) === selectedDate
     );
 
     let status = "no details";
@@ -278,8 +328,8 @@ const Attendances = () => {
         status = att.status;
         displayNote = att.note || "-";
 
-        if (att.check_in) {
-          const dateObj = new Date(att.check_in);
+        if (att.attendance_date) {
+          const dateObj = new Date(att.attendance_date);
           displayDate = `${String(dateObj.getDate()).padStart(2, "0")}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${dateObj.getFullYear()}`;
         } else {
           displayDate = "-";
@@ -294,6 +344,8 @@ const Attendances = () => {
           status === "late" ? "text-yellow-600 font-semibold" :
             status === "on_leave" ? "text-blue-600 font-semibold" :
               "text-gray-500";
+    
+    
 
     return [
       user.fullname,
@@ -326,7 +378,7 @@ const Attendances = () => {
         <Sidebar />
         <div className="p-7  flex-1 flex flex-col max-h-screen overflow-y-auto">
           {/* =================== SECTION 1: Persentase Kehadiran =================== */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <h1 className="text-xl font-bold mb-4 border-b pb-2">Persentase Kehadiran Per Ruangan</h1>
             <div className="mb-4 flex items-center justify-end">
               <label className="font-medium mr-2">Pilih Bulan:</label>
@@ -336,6 +388,8 @@ const Attendances = () => {
                 onChange={(e) => setSelectedMonth(e.target.value)}
               />
             </div>
+
+           
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {roomStats.map((stat, index) => {
@@ -353,8 +407,8 @@ const Attendances = () => {
                     .filter(att =>
                       att.room?.name === stat.room &&
                       att.status === "present" &&
-                      new Date(att.check_in).getMonth() + 1 === parseInt(selectedMonth.split("-")[1]) &&
-                      new Date(att.check_in).getFullYear() === parseInt(selectedMonth.split("-")[0])
+                      new Date(att.attendance_date).getMonth() + 1 === parseInt(selectedMonth.split("-")[1]) &&
+                      new Date(att.attendance_date).getFullYear() === parseInt(selectedMonth.split("-")[0])
                     )
                     .map(att => att.user.id)
                 );
@@ -389,6 +443,37 @@ const Attendances = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="mb-6 bg-white rounded-lg shadow-lg">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold">Request Tidak Hadir</h2>
+              <div>
+                
+                {attendanceRequest.length === 0 ? (
+                  <p className="text-gray-600">Tidak ada request tidak hadir.</p>
+                ) : (
+                  <ul className="flex gap-3  mt-3 ">
+                    
+                    {attendanceRequest.map((request) => (
+                      <div key={request.id} className="mb-4 p-3 bg-gray-100 rounded flex flex-col items-center">
+                       
+                          <span className="text-gray-600">{getFullname(request.user_id)}</span> meminta tidak hadir pada tanggal{" "}
+                          <span className="font-medium">
+                          {new Date(request.request_date).toLocaleDateString("id-ID")}
+                          </span>
+                        <div>
+                          <button className="px-3 py-1 bg-blue-500 text-white rounded mt-2  hover:bg-blue-700" onClick={() => handleBtnDetail(request)}>
+                            <span >Detail</span>
+                          </button>
+                        </div>
+                       
+                      </div>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
 
@@ -505,6 +590,57 @@ const Attendances = () => {
             Batal
           </button>
         </div>
+      </Modal>
+
+      <Modal isOpen={DetailModalRequest} title="Detail Request Tidak Hadir" onClose={()=> setDetailModalRequest(false) }>
+        {selectedDetailRequest && (
+          <div className="mb-4">
+            <div className="mb-4">
+              <label className="block text-white font-bold mb-2">Dokumen:</label>
+              <img src={selectedDetailRequest.file_proof} alt="" className="w-32 h-32 object-cover mb-4" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-white font-bold mb-2">Nama Karyawan:</label>
+              <p>
+                {getFullname(selectedDetailRequest.user_id)}
+
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-white font-bold mb-2">Tanggal Izin:</label>
+              <p>
+                {new Date(selectedDetailRequest.request_date).toLocaleDateString("id-ID")}
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-white font-bold mb-2">Tipe Izin:</label>
+              <p>
+                {selectedDetailRequest.request_type}
+              </p>
+            </div>
+            <div className="mb-4">
+              <div className="mt-4">
+                <label className="block text-white font-bold mb-2">Keterangan:</label>
+                <p>
+                  {selectedDetailRequest.reason}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button type="button" className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded" onClick={() => setDetailModalRequest(false)}>
+                Batal
+              </button>
+              <button type="button" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2"
+                onClick={(e) => handleAproveRequest(e, selectedDetailRequest.id)}>
+                Setujui
+              </button>
+              <button type="button" className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2" onClick={(e) => handleRejectRequest(e,selectedDetailRequest.id)}>
+                Tolak
+              </button>
+            </div>
+          </div>
+        )}
+     
       </Modal>
     </>
   );

@@ -5,6 +5,7 @@ import { UserContext } from './UserContext';
 
 
 export default function Sidebar() {
+
     const {currentUser} = React.useContext(UserContext);
     const [isOpen, setIsOpen] = useState(true);
     const [activeItem, setActiveItem] = useState();
@@ -22,13 +23,13 @@ export default function Sidebar() {
 
         { id: 'users', icon: Users, label: 'Users', link: '/users', roles: ['admin', 'leader'] },
 
-        { id: 'products', icon: Building, label: 'Ruang', link: '/rooms', roles: ['admin', 'leader', ] },
+        { id: 'rooms', icon: Building, label: 'Ruang', link: '/rooms', roles: ['admin', 'leader', ] },
 
         { id: 'settings', icon: Settings, label: 'Task', link: '/tasks', roles: ['admin', 'leader'] },
 
         { id: 'attendances', icon: Calendar, label: 'Attendances', link: '/attendances', roles: ['admin', 'leader'] },
 
-        { id: 'products', icon: Building, label: 'Ruang', link: '/myrooms', roles: ['leader','anggota'] },
+        { id: 'my_rooms', icon: Building, label: 'Ruang', link: '/myrooms', roles: ['leader','anggota'] },
 
         { id: 'my_attendance', icon: Calendar, label: 'My Attendance', link: '/myattendance', roles: ['leader', 'anggota'] },
         { id: 'attendance', icon: Calendar, label: 'Attendance', link: '/attendance', roles: ['leader', 'anggota'] },

@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../../components/sidebar";
+import FaceVerifyModal from "../../components/FaceVerifyModal";
 import { Html5Qrcode } from "html5-qrcode";
 import { Camera, CheckCircle, XCircle, RefreshCw, User, Briefcase, Building2, QrCode } from "lucide-react";
+import API from "../../api/API";
 
 const Attendance = () => {
     const html5QrCode = useRef(null);
     const isScanning = useRef(false);
-
+    const [openFaceModal, setOpenFaceModal] = useState(false);
+    const [faceVerified, setFaceVerified] = useState(false);
     const [scannedData, setScannedData] = useState(null);
     const [employeeData, setEmployeeData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -75,7 +78,7 @@ const Attendance = () => {
         setLoading(true);
         try {
             // Gunakan ID dari parsed JSON
-            const res = await fetch(`http://localhost:8000/attendance/employee/${data.id}`);
+            const res = await fetch(API + `users/${data.id}`);
             const result = await res.json();
 
             if (res.ok) {
@@ -124,15 +127,20 @@ const Attendance = () => {
     const handleAttendance = async () => {
         if (!scannedData) return;
 
+        if (!faceVerified) {
+            setOpenFaceModal(true);
+            return;
+        }
+
         setLoading(true);
         setMessage("");
 
         try {
-            const res = await fetch("http://localhost:8000/attendance/scan_qr", {
+            const res = await fetch(API + "attendance/scan_qr", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(scannedData), // Kirim object JSON
-            });
+            }); 
 
             const data = await res.json();
 
@@ -323,6 +331,18 @@ const Attendance = () => {
                                                 )}
                                                 <span className="font-medium">{message}</span>
                                             </div>
+                                        )}
+
+                                        {openFaceModal && (
+                                            <FaceVerifyModal
+                                                userId={employeeData.id}
+                                                onClose={() => setOpenFaceModal(false)}
+                                                onSuccess={() => {
+                                                    setOpenFaceModal(false);
+                                                    setFaceVerified(true);
+                                                    handleAttendance(); // auto submit setelah lolos face
+                                                }}
+                                            />
                                         )}
                                     </div>
                                 )}
